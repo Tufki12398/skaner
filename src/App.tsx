@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import * as XLSX from 'xlsx'
 
@@ -11,6 +11,9 @@ type InventoryItem = {
 type Mode = 'scanner' | 'camera'
 
 const STORAGE_KEY = 'remanent-items-v1'
+const AUTH_KEY = 'remanent-auth-v1'
+const AUTH_USER = 'magazyn'
+const AUTH_PASS = '!DemartRemanent123'
 const SCAN_COOLDOWN_MS = 1200
 
 const formatDate = (date: Date) =>
@@ -209,6 +212,12 @@ const CameraScanner = ({
 }
 
 const App = () => {
+  const [isAuthed, setIsAuthed] = useState(
+    () => localStorage.getItem(AUTH_KEY) === '1',
+  )
+  const [authUser, setAuthUser] = useState('')
+  const [authPass, setAuthPass] = useState('')
+  const [authError, setAuthError] = useState<string | null>(null)
   const [mode, setMode] = useState<Mode>('scanner')
   const [items, setItems] = useState<InventoryItem[]>(() => loadItems())
   const [scanInput, setScanInput] = useState('')
@@ -260,6 +269,14 @@ const App = () => {
   }, [items])
 
   useEffect(() => {
+    if (isAuthed) {
+      localStorage.setItem(AUTH_KEY, '1')
+    } else {
+      localStorage.removeItem(AUTH_KEY)
+    }
+  }, [isAuthed])
+
+  useEffect(() => {
     if (mode === 'scanner') {
       inputRef.current?.focus()
     }
@@ -270,6 +287,70 @@ const App = () => {
     if (!normalized) return
     setItems((prev) => upsertItem(prev, normalized))
     playBeep()
+  }
+
+  const handleLogin = (event: FormEvent) => {
+    event.preventDefault()
+    if (authUser === AUTH_USER && authPass === AUTH_PASS) {
+      setIsAuthed(true)
+      setAuthError(null)
+      setAuthUser('')
+      setAuthPass('')
+      return
+    }
+    setAuthError('Nieprawidłowy login lub hasło.')
+  }
+
+  const handleLogout = () => {
+    setIsAuthed(false)
+    setMode('scanner')
+  }
+
+  if (!isAuthed) {
+    return (
+      <div className="page auth-page">
+        <div className="panel auth-card">
+          <div className="panel-header">
+            <div>
+              <h2>Logowanie</h2>
+              <p>Wprowadź dane dostępu magazynu.</p>
+            </div>
+          </div>
+          <form className="auth-form" onSubmit={handleLogin}>
+            <label className="field">
+              <span>Użytkownik</span>
+              <input
+                value={authUser}
+                onChange={(event) => {
+                  setAuthUser(event.target.value)
+                  if (authError) setAuthError(null)
+                }}
+                autoComplete="username"
+                placeholder="magazyn"
+                autoFocus
+              />
+            </label>
+            <label className="field">
+              <span>Hasło</span>
+              <input
+                type="password"
+                value={authPass}
+                onChange={(event) => {
+                  setAuthPass(event.target.value)
+                  if (authError) setAuthError(null)
+                }}
+                autoComplete="current-password"
+                placeholder="••••••••••"
+              />
+            </label>
+            {authError && <p className="error">{authError}</p>}
+            <button className="button primary" type="submit">
+              Zaloguj
+            </button>
+          </form>
+        </div>
+      </div>
+    )
   }
 
   const handleManualAdd = () => {
@@ -308,6 +389,11 @@ const App = () => {
               Szybko zliczaj produkty z czytnika lub aparatu. Edytuj ilości i
               eksportuj do XLSX.
             </p> */}
+          </div>
+          <div className="auth-actions">
+            <button className="button ghost" type="button" onClick={handleLogout}>
+              Wyloguj
+            </button>
           </div>
           {/* <div className="stats">
             <div>
