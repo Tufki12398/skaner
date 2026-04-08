@@ -313,7 +313,7 @@ const App = () => {
           <div className="panel-header">
             <div>
               <h2>Logowanie</h2>
-              <p>Wprowadź dane dostępu magazynu.</p>
+              {/* <p>Wprowadź dane dostępu magazynu.</p> */}
             </div>
           </div>
           <form className="auth-form" onSubmit={handleLogin}>
@@ -326,7 +326,7 @@ const App = () => {
                   if (authError) setAuthError(null)
                 }}
                 autoComplete="username"
-                placeholder="magazyn"
+                placeholder="login"
                 autoFocus
               />
             </label>
@@ -340,7 +340,7 @@ const App = () => {
                   if (authError) setAuthError(null)
                 }}
                 autoComplete="current-password"
-                placeholder="••••••••••"
+                placeholder="haslo"
               />
             </label>
             {authError && <p className="error">{authError}</p>}
